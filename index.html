@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kompression — Gleicher Inhalt, weniger Platz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --paper:#EAE6D9;
+        --paper-grid: rgba(53,96,122,0.09);
+        --card:#F5F2E8;
+        --ink:#21262B;
+        --ink-soft:#5B5D53;
+        --carry:#B3402F;
+        --brass:#A9832A;
+        --slate:#35607A;
+        --leaf:#4C7A52;
+        --line:#C9C2AC;
+        --font-display:'Fraunces', serif;
+        --font-body:'Source Sans 3', sans-serif;
+        --font-mono:'IBM Plex Mono', monospace;
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+
+    body{
+        margin:0;
+        background:
+                linear-gradient(var(--paper-grid) 1px, transparent 1px) 0 0/100% 42px,
+                var(--paper);
+        color:var(--ink);
+        font-family:var(--font-body);
+        font-size:17px;
+        line-height:1.6;
+        -webkit-font-smoothing:antialiased;
+    }
+
+    a{ color:var(--slate); }
+    ::selection{ background:var(--brass); color:var(--paper); }
+    :focus-visible{ outline:3px solid var(--slate); outline-offset:3px; border-radius:2px; }
+
+    .wrap{ max-width:920px; margin:0 auto; padding:0 28px; }
+
+    /* ---------- Header ---------- */
+    header.top{ padding:48px 0 0; }
+    .eyebrow{
+        font-family:var(--font-mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase;
+        color:var(--slate); display:flex; align-items:center; gap:10px;
+    }
+    .eyebrow::before{ content:""; width:22px; height:1px; background:var(--slate); display:inline-block; }
+
+    .progress-wrap{ display:flex; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
+    .progress-track{ flex:1 1 160px; max-width:220px; height:6px; background:var(--line); border-radius:3px; overflow:hidden; }
+    .progress-fill{ height:100%; width:0%; background:var(--slate); transition:width .35s ease; }
+    .progress-badge{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); white-space:nowrap; }
+
+    /* ---------- Hero ---------- */
+    .hero{ padding:22px 0 60px; }
+    h1.headline{
+        font-family:var(--font-display); font-optical-sizing:auto; font-weight:600;
+        font-size:clamp(2.3rem, 5.4vw, 3.6rem); line-height:1.06; margin:14px 0 18px; max-width:15ch; color:var(--ink);
+    }
+    .headline em{ font-style:italic; color:var(--carry); }
+    .subhead{ max-width:60ch; color:var(--ink-soft); font-size:1.06rem; margin:0 0 40px; }
+
+    /* ---------- Dividers ---------- */
+    .divider{ display:flex; align-items:center; gap:14px; margin:8px 0 34px; }
+    .divider .line{ flex:1; height:1px; background:var(--line); }
+    .divider .label{
+        font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+        color:var(--ink-soft); white-space:nowrap;
+    }
+    .divider .num{
+        font-family:var(--font-mono); font-size:11px; color:#fff; background:var(--slate);
+        width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    }
+
+    .chip{
+        display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--line);
+        border-radius:100px; padding:3px 10px; font-size:.82rem;
+    }
+    .chip b{ color:var(--carry); }
+    .chip.brass b{ color:var(--brass); }
+    .chip.slate b{ color:var(--slate); }
+
+    /* ---------- Chapters ---------- */
+    section.chapter{ padding:52px 0 8px; border-top:1px dashed var(--line); margin-top:36px; }
+    .chap-sub{ color:var(--ink-soft); font-size:1.02rem; max-width:60ch; margin:0 0 30px; }
+    h2.chaptitle{ font-family:var(--font-display); font-weight:600; font-size:clamp(1.7rem,3.4vw,2.3rem); margin:0 0 6px; }
+
+    .grid-2{ display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:start; margin-bottom:10px; }
+    @media (max-width:800px){ .grid-2{ grid-template-columns:1fr; gap:26px; } }
+
+    ul.facts{ list-style:none; margin:0 0 20px; padding:0; }
+    ul.facts li{ padding:11px 0 11px 24px; border-bottom:1px solid var(--line); position:relative; font-size:.98rem; }
+    ul.facts li:last-child{ border-bottom:none; }
+    ul.facts li::before{ content:"—"; position:absolute; left:0; top:11px; color:var(--carry); font-size:13px; }
+    ul.facts b{ color:var(--ink); }
+
+    .worked{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:22px 24px; }
+    .worked .wt{ font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); margin-bottom:12px; }
+    .worked .expr{ font-family:var(--font-mono); font-size:14.5px; line-height:2; color:var(--ink); }
+    .worked .expr .result{ color:var(--carry); font-weight:600; }
+
+    .callout{
+        margin:26px 0 34px; border-left:3px solid var(--brass); padding:16px 20px;
+        background:rgba(169,131,42,0.07); border-radius:0 6px 6px 0; font-size:14.5px;
+    }
+    .callout .ct{ font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--brass); margin-bottom:8px; }
+
+    .methodhead{
+        display:flex; align-items:baseline; gap:12px; margin:38px 0 6px; padding-bottom:8px;
+        border-bottom:1.5px solid var(--ink);
+    }
+    .methodhead .mno{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--carry); }
+    .methodhead h3{ font-family:var(--font-display); font-weight:600; font-size:1.5rem; margin:0; }
+    .methodhead .when{ margin-left:auto; font-size:13px; color:var(--ink-soft); }
+    @media (max-width:640px){ .methodhead .when{ margin-left:0; flex-basis:100%; } }
+
+    /* ---------- Rezept + Rechenweg ---------- */
+    .recipe{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:20px 22px; margin:16px 0; }
+    .recipe .dir{ font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--carry); margin-bottom:10px; }
+    .rechnung{
+        font-family:var(--font-mono); font-size:13.5px; line-height:1.85; background:#fff;
+        border:1px solid var(--line); border-radius:5px; padding:12px 14px; overflow-x:auto;
+    }
+    .rechnung .res{ color:var(--carry); font-weight:600; }
+    .rechnung .hint{ color:var(--ink-soft); }
+
+    table.reftable{ width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:13.5px; margin-top:8px; }
+    table.reftable th{ text-align:left; padding:9px 12px; border-bottom:2px solid var(--ink); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+    table.reftable td{ padding:8px 12px; border-bottom:1px solid var(--line); }
+    table.reftable tr:hover td{ background:var(--card); }
+
+    /* ---------- console (live tool) ---------- */
+    .console{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:26px 24px 22px; }
+    .console-label{
+        font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft);
+        margin-bottom:16px; display:flex; justify-content:space-between; align-items:baseline;
+    }
+    .console-label .rst{
+        cursor:pointer; color:var(--slate); border:1px solid var(--slate); border-radius:4px; padding:4px 10px;
+        text-transform:none; letter-spacing:0; font-size:11px; background:transparent; font-family:var(--font-mono);
+    }
+    .console-label .rst:hover{ background:var(--slate); color:#fff; }
+    .field label{
+        display:block; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+        color:var(--ink-soft); margin-bottom:7px;
+    }
+    .rle-input{
+        font-family:var(--font-mono); font-size:1.05rem; width:100%; padding:10px 12px;
+        border:1px solid var(--line); border-radius:4px; background:#fff; color:var(--ink);
+    }
+    .readouts{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:22px; }
+    .readout{ background:#fff; border:1px solid var(--line); border-radius:6px; padding:12px 8px 11px; text-align:center; }
+    .readout .val{ font-family:var(--font-mono); font-size:clamp(15px,3.2vw,21px); font-weight:600; color:var(--carry); word-break:break-all; }
+    .readout .lab{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-top:5px; }
+    .equation{
+        margin-top:16px; padding:12px 14px; background:#fff; border:1px solid var(--line); border-radius:6px;
+        font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); text-align:center; overflow-x:auto; white-space:nowrap;
+    }
+    .equation .hi{ color:var(--slate); font-weight:600; }
+    @media (max-width:560px){ .readouts{ grid-template-columns:repeat(2,1fr); } }
+
+    /* ---------- pixel grid ---------- */
+    .pixelblock{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:22px 24px; }
+    .metabadges{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .pixelgrid{ display:grid; gap:2px; }
+    .pixelgrid .px{ aspect-ratio:1; border-radius:1px; }
+    .pixel-legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); }
+    .pixel-legend span.swatch{ display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+    /* ---------- Task / Aufgabe component ---------- */
+    .task{
+        display:flex; gap:14px; align-items:flex-start; padding:14px 16px; background:var(--card);
+        border:1px solid var(--line); border-left:3px solid var(--line); border-radius:0 6px 6px 0; margin:14px 0;
+    }
+    .task.pflicht{ border-left-color:var(--slate); }
+    .task.optional{ border-left-color:var(--brass); }
+    .task.vertiefung{ border-left-color:var(--carry); }
+    .task-check{
+        width:25px; height:25px; flex:0 0 auto; border:2px solid var(--ink-soft); border-radius:4px; background:#fff;
+        cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-top:2px;
+    }
+    .task-check .mark{ opacity:0; transform:scale(.5) rotate(-12deg); color:#fff; font-size:14px; line-height:1; transition:.15s; font-weight:700; }
+    .task.done{ background:rgba(91,93,83,0.06); }
+    .task.done .task-check{ background:var(--ink-soft); border-color:var(--ink-soft); }
+    .task.done .task-check .mark{ opacity:1; transform:scale(1) rotate(0deg); }
+    .task.done .task-body p{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); text-decoration-thickness:1.5px; }
+    .task-tag{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
+    .task.pflicht .task-tag{ color:var(--slate); }
+    .task.optional .task-tag{ color:var(--brass); }
+    .task.vertiefung .task-tag{ color:var(--carry); }
+    .task-body{ flex:1 1 auto; min-width:0; }
+    .task-body p{ margin:0; font-size:.95rem; }
+    .task-body ul{ margin:8px 0 0; padding-left:20px; font-size:.88rem; color:var(--ink-soft); }
+    .task-body ul li{ margin-bottom:3px; }
+
+    /* ---------- Musterlösungen ---------- */
+    details.loesung{ margin-top:12px; border:1px solid var(--line); border-radius:5px; background:#fff; overflow:hidden; }
+    details.loesung > summary{
+        cursor:pointer; list-style:none; padding:9px 13px;
+        font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+        color:var(--slate); display:flex; align-items:center; gap:8px; user-select:none;
+    }
+    details.loesung > summary::-webkit-details-marker{ display:none; }
+    details.loesung > summary::before{ content:"▸"; font-size:11px; transition:transform .15s ease; display:inline-block; }
+    details.loesung[open] > summary::before{ transform:rotate(90deg); }
+    details.loesung > summary:hover{ background:rgba(53,96,122,0.06); }
+    .loesung-body{ padding:2px 15px 16px; font-size:14.7px; border-top:1px solid var(--line); }
+    .loesung-body p{ margin:12px 0; }
+    .loesung-body ul{ margin:10px 0; padding-left:20px; }
+    .loesung-body li{ margin:5px 0; }
+    .loesung-body .mono{ font-family:var(--font-mono); }
+
+    /* ---------- Recap / footer ---------- */
+    footer.recap{ padding:20px 0 70px; }
+    .recap-list{ list-style:none; padding:0; margin:0 0 28px; display:grid; gap:10px; }
+    .recap-list li{ display:flex; gap:12px; align-items:baseline; font-size:.98rem; }
+    .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; transform:translateY(-1px); }
+    .dot.add{ background:var(--carry); }
+    .dot.pos{ background:var(--slate); }
+    .dot.hyb{ background:var(--brass); }
+    .recap-list b{ font-family:var(--font-mono); font-size:.86em; letter-spacing:.02em; }
+    .footnote{ font-size:.82rem; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:16px; }
+
+    .lernkontrolle{
+        display:none; margin-top:24px; padding:18px 20px; background:rgba(53,96,122,0.08);
+        border:1px solid var(--slate); border-radius:6px; font-size:.95rem;
+    }
+    .lernkontrolle b{ font-family:var(--font-display); font-size:1.05rem; display:block; margin-bottom:4px; }
+
+    .next-up{
+        margin-top:18px; padding:16px 20px; background:var(--card); border:1px dashed var(--line);
+        border-radius:6px; font-size:.92rem; color:var(--ink-soft);
+    }
+    .next-up b{ color:var(--ink); }
+
+    @media (max-width:720px){ .methodhead{ flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+    <header class="top">
+        <div class="eyebrow">Modul 114 · Komprimierung</div>
+        <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            <span class="progress-badge" id="progress-badge">Aufgaben werden geladen …</span>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1 class="headline">Gleicher Inhalt. <em>Weniger Platz.</em></h1>
+        <p class="subhead">Seit den Anfangszeiten der Informatik ist die Komprimierung von Daten ein grosses Thema. Früher war Speicherplatz knapp — man wollte so wenig davon verschwenden wie nur möglich. Auch die Kommunikationsmittel waren lange nicht so schnell wie heute: ein frühes Modem schaffte 300 Baud (Bytes pro Sekunde) — für 1 Kilobyte brauchte es also über 3 Sekunden. Heute streamt Netflix jeden Monat Millionen von Terabytes. Und diese Daten sind komprimiert — sonst würden sie noch viel mehr Bandbreite beanspruchen.</p>
+
+        <div class="console" id="rle-console">
+            <div class="console-label">
+                <span>Live-RLE-Rechner</span>
+                <button class="rst" id="rle-reset" type="button">zurücksetzen</button>
+            </div>
+            <div class="field">
+                <label for="rle-input">Dein Text</label>
+                <input id="rle-input" class="rle-input" type="text" value="xxxxxyzzzzzz" spellcheck="false" maxlength="80">
+            </div>
+            <div class="readouts" id="rle-readouts"></div>
+            <div class="equation" id="rle-equation"></div>
+        </div>
+    </section>
+
+    <!-- EINFÜHRUNG -->
+    <section class="chapter" id="einfuehrung">
+        <div class="divider"><span class="num">01</span><span class="label">Grundidee</span><span class="line"></span></div>
+        <h2 class="chaptitle">Warum überhaupt komprimieren?</h2>
+        <p class="chap-sub">Jede Information, die wir speichern, braucht Platz. Manche Informationen sind genügsam, andere brauchen sehr viel — besonders Bilder und Videos.</p>
+
+        <div class="callout">
+            <div class="ct">Ein paar Zahlen</div>
+            Video-Streamingdienste verursachen heute über <b>70 %</b> des gesamten Download-Traffics im Internet. Netflix allein steht in Amerika im Durchschnitt für etwas mehr als <b>22 %</b> — in Spitzenzeiten sogar bis zu <b>40 %</b>.
+        </div>
+
+        <p>Das ist eine enorme Datenmenge. Diese Videos lassen sich überhaupt nur in brauchbarer Qualität ausliefern, weil sie komprimiert sind: Nicht jedes einzelne Bild wird in voller Auflösung übertragen. Die anfallende Datenmenge wird geschickt verkleinert und erst beim Betrachter wiederhergestellt.</p>
+        <p>Datenkompression gibt es aber nicht erst seit Netflix — sie ist ein altes Thema in der Informatik. Wir müssen nicht jede einzelne Kompressionsmethode auswendig kennen. Aber das grundsätzliche Prinzip dahinter und ein paar zentrale Begriffe müssen sitzen.</p>
+    </section>
+
+    <!-- EINFÜHRENDES BEISPIEL -->
+    <section class="chapter" id="beispiel">
+        <div class="divider"><span class="num">02</span><span class="label">Einführendes Beispiel</span><span class="line"></span></div>
+        <h2 class="chaptitle">Ein Bild als Bytes</h2>
+        <p class="chap-sub">Unten sehen Sie eine Bilddatei symbolisch dargestellt. Jedes Kästchen steht für 1 Byte in der Datei. Die beiden weissen Kästchen am Anfang gehören nicht zum eigentlichen Bild, sondern sind Metadaten — sie halten Breite und Höhe des Bildes fest. Die farbigen Kästchen enthalten je einen Farbwert (Rot, Grün oder Blau).</p>
+
+        <div class="pixelblock">
+            <div class="metabadges">
+                <span class="chip"><b>Breite</b>&nbsp;15</span>
+                <span class="chip"><b>Höhe</b>&nbsp;7</span>
+            </div>
+            <div class="pixelgrid" id="img1-grid" style="max-width:420px;"></div>
+            <div class="pixel-legend">
+                <span><span class="swatch" style="background:var(--carry);"></span>Rot</span>
+                <span><span class="swatch" style="background:var(--leaf);"></span>Grün</span>
+                <span><span class="swatch" style="background:var(--slate);"></span>Blau</span>
+            </div>
+        </div>
+
+        <div class="task pflicht" data-task="beispiel-groesse">
+            <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+            <div class="task-body">
+                <div class="task-tag">Pflichtaufgabe</div>
+                <p>Wie gross ist die Datei (in Bytes)? Wenn Sie sich das Bild anschauen, fällt auf, dass immer wieder Punkte mit der gleichen Farbe aufeinanderfolgen. Könnte das vereinfacht werden?</p>
+
+                <details class="loesung" open>
+                    <summary>Musterlösung</summary>
+                    <div class="loesung-body">
+                        <div class="recipe">
+                            <div class="dir">Dateigrösse</div>
+                            <div class="rechnung">
+                                2 Byte Metadaten (Breite, Höhe)<br>
+                                + 15 × 7 = 105 Byte Bildpunkte<br>
+                                = <span class="res">107 Byte</span>
+                            </div>
+                        </div>
+                        <p>Und ja: Es gibt lange Läufe der gleichen Farbe hintereinander — genau darauf baut die Methode im nächsten Abschnitt auf.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="task pflicht" data-task="beispiel-vorschlaege">
+            <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+            <div class="task-body">
+                <div class="task-tag">Pflichtaufgabe</div>
+                <p>Wie könnte man dieses Bild abspeichern, sodass die Datei weniger Bytes benötigt? Schreiben Sie ein oder zwei Vorschläge auf und schätzen Sie, wie viele Bytes Ihre Idee benötigen würde. Besprechen Sie das mit einer Banknachbarin oder einem Banknachbarn.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- RLE -->
+    <section class="chapter" id="rle">
+        <div class="divider"><span class="num">03</span><span class="label">Run Length Encoding</span><span class="line"></span></div>
+        <h2 class="chaptitle">RLE — Wiederholungen zusammenfassen</h2>
+        <p class="chap-sub">Eine alte, einfache Methode zur Datenkomprimierung heisst Run Length Encoding (Lauflängen-Kodierung). Statt sich direkt wiederholende Werte immer wieder aufzuschreiben, fasst man sie zu einem Zähler + Wert zusammen.</p>
+
+        <div class="worked">
+            <div class="wt">Beispiel</div>
+            <div class="expr">
+                x x x x x y z z z z z z &nbsp;<span style="color:var(--ink-soft)">(12 Byte)</span><br>
+                → <span class="result">5x 1y 6z</span> &nbsp;<span style="color:var(--ink-soft)">(6 Byte)</span>
+            </div>
+        </div>
+        <p style="font-size:.95rem; color:var(--ink-soft);">Genau die gleiche Information — nur mit halb so vielen Bytes aufgeschrieben. Probieren Sie es oben im Live-RLE-Rechner mit eigenen Texten aus.</p>
+
+        <div class="task pflicht" data-task="rle-video">
+            <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+            <div class="task-body">
+                <div class="task-tag">Pflichtaufgabe</div>
+                <p>Schauen Sie sich ein Video zur Run Length Encoding an (das Video hat keinen Ton).</p>
+            </div>
+        </div>
+
+        <div class="methodhead">
+            <span class="mno">Anwendung</span>
+            <h3>Zurück zum Beispielbild</h3>
+            <span class="when">15 × 7 Pixel, 11 Farbläufe</span>
+        </div>
+        <p>Wenden wir RLE auf das Bild von oben an. Jede Farbe, die mehrmals hintereinander vorkommt, wird durch <i>Anzahl + Farbe</i> ersetzt — pro Lauf 2 Byte (1 Byte Anzahl, 1 Byte Farbwert).</p>
+
+        <div class="task pflicht" data-task="rle-beispielbild">
+            <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+            <div class="task-body">
+                <div class="task-tag">Pflichtaufgabe</div>
+                <p>Komprimieren Sie das Bild von oben mit Run Length Encoding. Wie viele Bytes benötigt die Datei jetzt?</p>
+
+                <details class="loesung" open>
+                    <summary>Musterlösung</summary>
+                    <div class="loesung-body">
+                        <div class="recipe">
+                            <div class="dir">Farbläufe, in Leserichtung</div>
+                            <div class="rechnung">
+                                20R 10G 15B 5R 20G 5B 10R 5G 10B 3R 2G<br>
+                                <span class="hint">(11 Läufe, Summe der Anzahlen: 105 Pixel ✓)</span>
+                            </div>
+                        </div>
+                        <div class="recipe">
+                            <div class="dir">Neue Dateigrösse</div>
+                            <div class="rechnung">
+                                2 Byte Metadaten<br>
+                                + 11 Läufe × 2 Byte<br>
+                                = 2 + 22<br>
+                                = <span class="res">24 Byte</span> &nbsp;<span class="hint">statt ursprünglich 107 Byte</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- KOMPRESSIONSFAKTOR / -RATE -->
+    <section class="chapter" id="kompressionsfaktor">
+        <div class="divider"><span class="num">04</span><span class="label">Masszahlen</span><span class="line"></span></div>
+        <h2 class="chaptitle">Kompressionsfaktor &amp; Kompressionsrate</h2>
+        <p class="chap-sub">Um zu beschreiben, wie gut ein Algorithmus Daten komprimiert, gibt es zwei feste Begriffe.</p>
+
+        <div class="grid-2">
+            <div class="worked">
+                <div class="wt">Kompressionsrate</div>
+                <div class="expr">Anfangsgrösse ÷ Endgrösse</div>
+                <p style="font-size:.9rem; color:var(--ink-soft); margin:12px 0 0;">Je <b>höher</b> der Wert, desto besser die Komprimierung.</p>
+            </div>
+            <div class="worked">
+                <div class="wt">Kompressionsfaktor</div>
+                <div class="expr">Endgrösse ÷ Anfangsgrösse</div>
+                <p style="font-size:.9rem; color:var(--ink-soft); margin:12px 0 0;">Je <b>tiefer</b> der Wert, desto besser die Komprimierung — der Kehrwert der Kompressionsrate.</p>
+            </div>
+        </div>
+
+        <p style="margin-top:24px;">Beide Werte lassen sich unterschiedlich darstellen: als Dezimalzahl (z. B. 0.2), als Verhältnis (z. B. 1 : 5) oder als Prozentzahl (z. B. 20 %).</p>
+
+        <div class="worked" style="margin-top:20px;">
+            <div class="wt">Für unser Beispielbild (107 → 24 Byte)</div>
+            <div class="expr">
+                Kompressionsrate = 107 ÷ 24 = <span class="result">4.46</span> &nbsp;<span style="color:var(--ink-soft)">(rund 4.5 : 1)</span><br>
+                Kompressionsfaktor = 24 ÷ 107 = <span class="result">0.22</span> &nbsp;<span style="color:var(--ink-soft)">(rund 22 % bzw. 1 : 4.5)</span>
+            </div>
+        </div>
+        <p style="font-size:.95rem; color:var(--ink-soft); margin-top:14px;">Das Bild liess sich also auf rund ein Viertel seiner ursprünglichen Grösse verkleinern.</p>
+    </section>
+
+    <!-- EINE METHODE FÜR ALLE BILDER? -->
+    <section class="chapter" id="alle-bilder">
+        <div class="divider"><span class="num">05</span><span class="label">Grenzen von RLE</span><span class="line"></span></div>
+        <h2 class="chaptitle">Eine Kompressionsmethode für alle Bilder?</h2>
+        <p class="chap-sub">Das erste Bild liess sich gut komprimieren, weil es aus grossen, einfarbigen Flächen bestand. Schauen wir uns ein zweites, viel unruhigeres Bild an.</p>
+
+        <div class="pixelblock">
+            <div class="metabadges">
+                <span class="chip"><b>Breite</b>&nbsp;10</span>
+                <span class="chip"><b>Höhe</b>&nbsp;10</span>
+            </div>
+            <div class="pixelgrid" id="img2-grid" style="max-width:300px;"></div>
+            <div class="pixel-legend">
+                <span><span class="swatch" style="background:var(--carry);"></span>Rot</span>
+                <span><span class="swatch" style="background:var(--leaf);"></span>Grün</span>
+                <span><span class="swatch" style="background:var(--slate);"></span>Blau</span>
+            </div>
+        </div>
+
+        <div class="task pflicht" data-task="alle-bilder-aufgabe">
+            <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+            <div class="task-body">
+                <div class="task-tag">Pflichtaufgabe</div>
+                <p>Betrachten Sie das Bild oben:</p>
+                <ul>
+                    <li>Wie gross ist die entsprechende Bilddatei (in Bytes)?</li>
+                    <li>Komprimieren Sie das Bild mit Run Length Encoding.</li>
+                    <li>Wie viele Bytes benötigt die Datei jetzt?</li>
+                    <li>Wie gross ist der Kompressionsfaktor?</li>
+                    <li>Was können Sie daraus für einen Schluss ziehen?</li>
+                </ul>
+
+                <details class="loesung" open>
+                    <summary>Musterlösung</summary>
+                    <div class="loesung-body">
+                        <div class="recipe">
+                            <div class="dir">Ursprüngliche Dateigrösse</div>
+                            <div class="rechnung">
+                                2 Byte Metadaten + 10 × 10 = 100 Byte Pixel<br>
+                                = <span class="res">102 Byte</span>
+                            </div>
+                        </div>
+                        <div class="recipe">
+                            <div class="dir">Mit RLE komprimiert</div>
+                            <div class="rechnung">
+                                Farbe wechselt bei praktisch jedem Pixel (R G B R G B …) → 100 Läufe der Länge 1<br>
+                                2 Byte Metadaten + 100 Läufe × 2 Byte<br>
+                                = <span class="res">202 Byte</span>
+                            </div>
+                        </div>
+                        <div class="recipe">
+                            <div class="dir">Kompressionsfaktor</div>
+                            <div class="rechnung">
+                                202 ÷ 102 ≈ <span class="res">1.98</span> &nbsp;<span class="hint">— grösser als 1!</span>
+                            </div>
+                        </div>
+                        <p><b>Schlussfolgerung:</b> RLE ist keine Universallösung. Bei Bildern mit vielen kurzen Farbwechseln — etwa Fotos — kann die «komprimierte» Datei sogar <b>grösser</b> werden als das Original, weil für jeden einzelnen Pixel zusätzlich noch ein Zähler-Byte mitgespeichert wird. RLE eignet sich nur für Bilder mit grossen, gleichfarbigen Flächen wie Comics oder Firmenlogos. Für alles andere braucht es andere Methoden.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="next-up">Als Nächstes folgt die <b>Huffman-Codierung</b> — eine Methode, die auch bei «unruhigen» Daten wie Text noch gut funktioniert. Wird ergänzt, sobald verfügbar.</div>
+    </section>
+
+    <footer class="recap">
+        <div class="divider"><span class="line"></span><span class="label">Kurz zusammengefasst</span><span class="line"></span></div>
+        <ul class="recap-list">
+            <li><span class="dot add"></span><span><b>RLE</b> — Wiederholungen als Anzahl + Wert schreiben. <em>(gut für grosse einfarbige Flächen)</em></span></li>
+            <li><span class="dot pos"></span><span><b>Kompressionsrate / -faktor</b> — Anfangsgrösse zu Endgrösse ins Verhältnis setzen.</span></li>
+            <li><span class="dot hyb"></span><span><b>Grenzen</b> — RLE hilft nicht bei jedem Bild; bei vielen Farbwechseln kann es sogar grösser werden.</span></li>
+        </ul>
+        <div class="lernkontrolle" id="lernkontrolle-note">
+            <b>Alle Aufgaben erledigt.</b>
+            Sie können jetzt bei der Lehrperson eine Lernkontrolle holen.
+        </div>
+        <p class="footnote">Modul 114 · Komprimierung — wird fortlaufend ergänzt.</p>
+    </footer>
+</div>
+
+<script>
+    /* ---------- Live-RLE-Rechner ---------- */
+    (function(){
+        var input = document.getElementById('rle-input');
+        var readouts = document.getElementById('rle-readouts');
+        var eq = document.getElementById('rle-equation');
+        var resetBtn = document.getElementById('rle-reset');
+        var defaultVal = input.value;
+
+        function rleEncode(str){
+            var runs = [];
+            if (!str.length) return runs;
+            var cur = str[0], count = 1;
+            for (var i = 1; i < str.length; i++){
+                if (str[i] === cur){ count++; }
+                else { runs.push({ ch: cur, count: count }); cur = str[i]; count = 1; }
+            }
+            runs.push({ ch: cur, count: count });
+            return runs;
+        }
+
+        function render(){
+            var text = input.value;
+            var origBytes = text.length;
+            var runs = rleEncode(text);
+            var rleBytes = runs.length * 2;
+            var factor = origBytes > 0 ? (rleBytes / origBytes) : 0;
+            var rate = rleBytes > 0 ? (origBytes / rleBytes) : 0;
+
+            readouts.innerHTML =
+                '<div class="readout"><div class="val">' + origBytes + '</div><div class="lab">Original (Byte)</div></div>' +
+                '<div class="readout"><div class="val">' + rleBytes + '</div><div class="lab">RLE (Byte)</div></div>' +
+                '<div class="readout"><div class="val">' + rate.toFixed(2) + '</div><div class="lab">Kompressionsrate</div></div>' +
+                '<div class="readout"><div class="val">' + factor.toFixed(2) + '</div><div class="lab">Kompressionsfaktor</div></div>';
+
+            var seq = runs.map(function(r){ return r.count + String(r.ch); }).join(' ');
+            eq.innerHTML = (text.length ? text : '–') + ' &nbsp;→&nbsp; <span class="hi">' + (seq.length ? seq : '–') + '</span>';
+        }
+
+        input.addEventListener('input', render);
+        resetBtn.addEventListener('click', function(){ input.value = defaultVal; render(); });
+        render();
+    })();
+
+    /* ---------- Pixel-Raster ---------- */
+    (function(){
+        var colorMap = { R: 'var(--carry)', G: 'var(--leaf)', B: 'var(--slate)' };
+
+        function buildFromRuns(runs){
+            var arr = [];
+            runs.forEach(function(r){ for (var i = 0; i < r.n; i++) arr.push(r.c); });
+            return arr;
+        }
+
+        function renderGrid(containerId, pixels, cols){
+            var el = document.getElementById(containerId);
+            if (!el) return;
+            el.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+            el.innerHTML = pixels.map(function(c){
+                return '<div class="px" style="background:' + colorMap[c] + ';"></div>';
+            }).join('');
+        }
+
+        // Bild 1: 15x7, elf Farbläufe
+        var runs1 = [
+            { c:'R', n:20 }, { c:'G', n:10 }, { c:'B', n:15 }, { c:'R', n:5 }, { c:'G', n:20 },
+            { c:'B', n:5 }, { c:'R', n:10 }, { c:'G', n:5 }, { c:'B', n:10 }, { c:'R', n:3 }, { c:'G', n:2 }
+        ];
+        renderGrid('img1-grid', buildFromRuns(runs1), 15);
+
+        // Bild 2: 10x10, R/G/B im Wechsel — praktisch keine Wiederholung
+        var pixels2 = [];
+        var cycle = ['R', 'G', 'B'];
+        for (var i = 0; i < 100; i++) pixels2.push(cycle[i % 3]);
+        renderGrid('img2-grid', pixels2, 10);
+    })();
+
+    /* ---------- Task tracker with persistent storage ---------- */
+    (function(){
+        var tasks = Array.prototype.slice.call(document.querySelectorAll('.task'));
+
+        function updateProgress(){
+            var done = document.querySelectorAll('.task.done').length;
+            var total = tasks.length;
+            var badge = document.getElementById('progress-badge');
+            var fill = document.getElementById('progress-fill');
+            var note = document.getElementById('lernkontrolle-note');
+            if (badge) badge.textContent = done + ' / ' + total + ' Aufgaben erledigt';
+            if (fill) fill.style.width = (total ? (done / total * 100) : 0) + '%';
+            if (note) note.style.display = (total > 0 && done === total) ? 'block' : 'none';
+        }
+
+        function setDone(task, done){
+            task.classList.toggle('done', done);
+            task.querySelector('.task-check').setAttribute('aria-pressed', done ? 'true' : 'false');
+        }
+
+        async function init(){
+            for (var i = 0; i < tasks.length; i++){
+                var task = tasks[i];
+                var id = task.dataset.task;
+                try{
+                    var res = await window.storage.get('task:' + id, false);
+                    if (res && res.value === 'true') setDone(task, true);
+                }catch(e){ /* no saved state yet, or storage unavailable */ }
+            }
+            updateProgress();
+
+            tasks.forEach(function(task){
+                task.querySelector('.task-check').addEventListener('click', async function(){
+                    var nowDone = !task.classList.contains('done');
+                    setDone(task, nowDone);
+                    updateProgress();
+                    try{
+                        await window.storage.set('task:' + task.dataset.task, nowDone ? 'true' : 'false', false);
+                    }catch(e){ /* storage unavailable; state still works for this session */ }
+                });
+            });
+        }
+
+        if (window.storage){ init(); }
+        else {
+            updateProgress();
+            tasks.forEach(function(task){
+                task.querySelector('.task-check').addEventListener('click', function(){
+                    setDone(task, !task.classList.contains('done'));
+                    updateProgress();
+                });
+            });
+        }
+    })();
+</script>
+
+</body>
+</html>
